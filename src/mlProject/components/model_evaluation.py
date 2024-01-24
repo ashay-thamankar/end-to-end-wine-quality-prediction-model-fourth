@@ -31,25 +31,33 @@ class ModelEvaluation:
         mlflow.set_registry_uri(self.config.mlflow_uri)
         tracking_uri_type_store = urlparse(mlflow.get_tracking_uri()).scheme
 
+        predicted_qualities = model.predict(test_x)
 
-        with mlflow.start_run():
-            predicted_qualities = model.predict(test_x)
+        (rmse, mae, r2) = self.eval_metrics(test_y, predicted_qualities)
 
-            (rmse, mae, r2) = self.eval_metrics(test_y, predicted_qualities)
+        # saving metrics as local
+        scores = {'rmse': rmse, 'mae': mae, 'r2': r2} 
+        save_json(path= Path(self.config.metric_file_name), data=scores)
 
-            # saving metrics as local
-            scores = {'rmse': rmse, 'mae': mae, 'r2': r2} 
-            save_json(path= Path(self.config.metric_file_name), data=scores)
 
-            mlflow.log_params(self.config.all_params)
+        # with mlflow.start_run():
+        #     predicted_qualities = model.predict(test_x)
 
-            mlflow.log_metric('rmse', rmse)
-            mlflow.log_metric('mae', mae)
-            mlflow.log_metric('r2',r2)
+        #     (rmse, mae, r2) = self.eval_metrics(test_y, predicted_qualities)
 
-            # log metrics does not work with file store
-            if tracking_uri_type_store !='file':
-                mlflow.sklearn.log_model(model, 'model', registered_model_name='ElasticnetModel')
+        #     # saving metrics as local
+        #     scores = {'rmse': rmse, 'mae': mae, 'r2': r2} 
+        #     save_json(path= Path(self.config.metric_file_name), data=scores)
 
-            else:
-                mlflow.sklearn.load_model(model, 'model')
+        #     mlflow.log_params(self.config.all_params)
+
+        #     mlflow.log_metric('rmse', rmse)
+        #     mlflow.log_metric('mae', mae)
+        #     mlflow.log_metric('r2',r2)
+
+        #     # log metrics does not work with file store
+        #     if tracking_uri_type_store !='file':
+        #         mlflow.sklearn.log_model(model, 'model', registered_model_name='ElasticnetModel')
+
+        #     else:
+        #         mlflow.sklearn.load_model(model, 'model')
